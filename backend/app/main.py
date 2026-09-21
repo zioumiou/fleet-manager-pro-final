@@ -1,3 +1,4 @@
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
@@ -14,6 +15,19 @@ from .routers import analytics
 
 app = FastAPI(title="FleetManager Pro API")
 
+# Configuration CORS pour autoriser Vercel et le localhost
+app.add_middleware(
+   CORSMiddleware,
+   allow_origins=[
+       "http://localhost:5173",
+       "https://fleet-manager-pro-final.vercel.app",
+       "https://fleet-manager-pro-final.onrender.com"
+   ],
+   allow_credentials=True,
+   allow_methods=["*"],  # Autorise GET, POST, PUT, DELETE, etc.
+   allow_headers=["*"],  # Autorise tous les en-têtes (y compris Authorization)
+)
+   
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
