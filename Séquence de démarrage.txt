@@ -1,0 +1,13 @@
+
+#Backend
+cd "D:\FleetManager\fleet-manager-pro-local\backend"
+.\venv\Scripts\activate
+python run.py
+
+
+
+
+#frontend
+
+cd "D:\FleetManager\fleet-manager-pro-local\frontend"
+npm run dev
