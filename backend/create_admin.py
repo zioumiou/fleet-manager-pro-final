@@ -1,28 +1,29 @@
-from app.database import SessionLocal, engine, Base
+from app.database import SessionLocal
 from app import models, auth
 
-# S'assurer que toutes les tables (y compris 'users') sont créées
-Base.metadata.create_all(bind=engine)
+def create_admin():
+    db = SessionLocal()
+    try:
+        admin = db.query(models.User).filter(models.User.email == "admin@fleet.com").first()
+        if not admin:
+            hashed_password = auth.get_password_hash("admin123")
+            new_admin = models.User(
+                email="admin@fleet.com",
+                hashed_password=hashed_password,
+                is_active=True,
+                is_superuser=True
+            )
+            db.add(new_admin)
+            db.commit()
+            print("✅ Compte admin créé avec succès !")
+            print("📧 Email: admin@fleet.com")
+            print("🔑 Mot de passe: admin123")
+        else:
+            print("ℹ️ Le compte admin existe déjà.")
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+    finally:
+        db.close()
 
-db = SessionLocal()
-email = "admin@fleet.com"
-
-# Vérifier si l'utilisateur existe déjà
-user = db.query(models.User).filter(models.User.email == email).first()
-
-if not user:
-    new_user = models.User(
-        email=email,
-        hashed_password=auth.get_password_hash("admin123"),
-        full_name="Administrateur",
-        role="admin"
-    )
-    db.add(new_user)
-    db.commit()
-    print("✅ Compte admin créé avec succès !")
-    print("📧 Email: admin@fleet.com")
-    print("🔑 Mot de passe: admin123")
-else:
-    print("ℹ️ Le compte admin existe déjà.")
-
-db.close()
+if __name__ == "__main__":
+    create_admin()
