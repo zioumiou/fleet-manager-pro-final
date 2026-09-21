@@ -74,7 +74,7 @@ export default function Fuels() {
       price_per_liter: fuel.price_per_liter || 0,
       total_cost: fuel.total_cost || 0,
       station: fuel.station || '',
-      full_tank: fuel.full_tank || 1
+      full_tank: formData.full_tank === true ? 1 : 0
     });
     setShowForm(true);
   };
