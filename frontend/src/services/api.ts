@@ -1,17 +1,21 @@
 import axios from 'axios';
 import { 
   Vehicle, Maintenance, Fuel, Expense, Tire, Reminder, 
-  Document, Driver, NaftalCard, NaftalTransaction, Budget, Incident 
+  Document, Driver, NaftalCard, NaftalTransaction, Budget, Incident,
+  KPIs, Alert, VehicleTCO 
 } from '../types';
 
+// Construction intelligente de l'URL de base (pour la production)
+const rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
+
+// Instance axios unique
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_BASE,
+  headers: { 'Content-Type': 'application/json' }
 });
 
-// Interceptor pour ajouter le token JWT automatiquement à chaque requête
+// Interceptor pour ajouter le token JWT automatiquement
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -20,49 +24,59 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ==================== VEHICLES ====================
+// ==================== VÉHICULES ====================
 export const getVehicles = () => api.get<Vehicle[]>('/vehicles/');
 export const createVehicle = (data: any) => api.post<Vehicle>('/vehicles/', data);
 export const updateVehicle = (id: number, data: any) => api.put<Vehicle>(`/vehicles/${id}`, data);
 export const deleteVehicle = (id: number) => api.delete(`/vehicles/${id}`);
-export const getVehicleTCO = (id: number) => api.get(`/vehicles/${id}/tco`);
-export const exportVehiclesCSV = () => api.get('/export/vehicles/csv', { responseType: 'blob' });
-export const exportVehiclesExcel = () => api.get('/export/vehicles/excel', { responseType: 'blob' });
+export const getVehicleTCO = (id: number) => api.get<VehicleTCO>(`/vehicles/${id}/tco`);
 
-// ==================== MAINTENANCES ====================
-export const getMaintenances = () => api.get<Maintenance[]>('/maintenances/');
+// ==================== DOCUMENTS ====================
+export const uploadDocument = (vehicleId: number, documentType: string, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post<Document>(`/documents/vehicles/${vehicleId}/?document_type=${documentType}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+export const getVehicleDocuments = (vehicleId: number) => api.get<Document[]>(`/documents/vehicles/${vehicleId}/`);
+export const deleteDocument = (docId: number) => api.delete(`/documents/${docId}`);
+export const downloadDocument = (documentId: number) => {
+  window.open(`${API_BASE}/documents/${documentId}/download`, '_blank');
+};
+
+// ==================== ENTRETIENS ====================
+export const getMaintenances = (vehicleId?: number) => api.get<Maintenance[]>('/maintenances/', { params: { vehicle_id: vehicleId } });
 export const createMaintenance = (data: any) => api.post<Maintenance>('/maintenances/', data);
 export const updateMaintenance = (id: number, data: any) => api.put<Maintenance>(`/maintenances/${id}`, data);
 export const deleteMaintenance = (id: number) => api.delete(`/maintenances/${id}`);
 
-// ==================== FUELS ====================
-export const getFuels = () => api.get<Fuel[]>('/fuels/');
+// ==================== CARBURANT ====================
+export const getFuels = (vehicleId?: number) => api.get<Fuel[]>('/fuels/', { params: { vehicle_id: vehicleId } });
 export const createFuel = (data: any) => api.post<Fuel>('/fuels/', data);
 export const updateFuel = (id: number, data: any) => api.put<Fuel>(`/fuels/${id}`, data);
 export const deleteFuel = (id: number) => api.delete(`/fuels/${id}`);
 
-// ==================== EXPENSES ====================
-export const getExpenses = () => api.get<Expense[]>('/expenses/');
+// ==================== DÉPENSES ====================
+export const getExpenses = (vehicleId?: number) => api.get<Expense[]>('/expenses/', { params: { vehicle_id: vehicleId } });
 export const createExpense = (data: any) => api.post<Expense>('/expenses/', data);
 export const updateExpense = (id: number, data: any) => api.put<Expense>(`/expenses/${id}`, data);
 export const deleteExpense = (id: number) => api.delete(`/expenses/${id}`);
-
-// ✅ Alias pour Expenses.tsx qui cherche getCategories
 export const getCategories = () => api.get('/expenses/categories');
 
-// ==================== TIRES ====================
-export const getTires = () => api.get<Tire[]>('/tires/');
+// ==================== PNEUS ====================
+export const getTires = (vehicleId?: number) => api.get<Tire[]>('/tires/', { params: { vehicle_id: vehicleId } });
 export const createTire = (data: any) => api.post<Tire>('/tires/', data);
 export const updateTire = (id: number, data: any) => api.put<Tire>(`/tires/${id}`, data);
 export const deleteTire = (id: number) => api.delete(`/tires/${id}`);
 
-// ==================== REMINDERS ====================
+// ==================== RAPPELS ====================
 export const getReminders = () => api.get<Reminder[]>('/reminders/');
 export const createReminder = (data: any) => api.post<Reminder>('/reminders/', data);
 export const updateReminder = (id: number, data: any) => api.put<Reminder>(`/reminders/${id}`, data);
 export const deleteReminder = (id: number) => api.delete(`/reminders/${id}`);
 
-// ==================== DRIVERS ====================
+// ==================== CONDUCTEURS ====================
 export const getDrivers = () => api.get<Driver[]>('/drivers/');
 export const createDriver = (data: any) => api.post<Driver>('/drivers/', data);
 export const updateDriver = (id: number, data: any) => api.put<Driver>(`/drivers/${id}`, data);
@@ -74,7 +88,7 @@ export const createNaftalCard = (data: any) => api.post<NaftalCard>('/naftal/car
 export const updateNaftalCard = (id: number, data: any) => api.put<NaftalCard>(`/naftal/cards/${id}`, data);
 export const deleteNaftalCard = (id: number) => api.delete(`/naftal/cards/${id}`);
 export const getNaftalTransactions = (cardId: number) => api.get<NaftalTransaction[]>(`/naftal/cards/${cardId}/transactions`);
-export const createNaftalTransaction = (cardId: number, data: any) => api.post<NaftalTransaction>(`/naftal/cards/${cardId}/transactions`, data);
+export const createNaftalTransaction = (data: any) => api.post<NaftalTransaction>('/naftal/transactions/', data);
 
 // ==================== BUDGETS ====================
 export const getBudgets = () => api.get<Budget[]>('/budgets/');
@@ -88,37 +102,26 @@ export const createIncident = (data: any) => api.post<Incident>('/incidents/', d
 export const updateIncident = (id: number, data: any) => api.put<Incident>(`/incidents/${id}`, data);
 export const deleteIncident = (id: number) => api.delete(`/incidents/${id}`);
 
-// ==================== DOCUMENTS ====================
-export const uploadDocument = async (formData: FormData) => {
-  return api.post('/documents/', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
-};
-
-export const getVehicleDocuments = (vehicleId: number) => 
-  api.get<Document[]>(`/documents/vehicle/${vehicleId}`);
-
-export const downloadDocument = (documentId: number) => {
-  window.open(`http://localhost:8000/api/documents/${documentId}/download`, '_blank');
-};
-
-// ==================== DASHBOARD ====================
-export const getDashboardKPIs = () => api.get('/dashboard/kpis');
-export const getDashboardAlerts = () => api.get('/dashboard/alerts');
-
-// ✅ Alias pour Dashboard.tsx
-export const getKPIs = getDashboardKPIs;
-export const getAlerts = getDashboardAlerts;
-// ==================== NOTIFICATIONS ====================
+// ==================== DASHBOARD & NOTIFICATIONS ====================
+export const getKPIs = (vehicleId?: number) => api.get<KPIs>('/dashboard/kpis', { params: { vehicle_id: vehicleId } });
+export const getAlerts = () => api.get<Alert[]>('/dashboard/alerts');
+export const getDashboardAlerts = getAlerts;
 export const getNotifications = () => api.get('/notifications/');
 
-// ==================== UTILS ====================
-export const downloadFile = (data: any, filename: string) => {
-  const url = window.URL.createObjectURL(new Blob([data]));
+// ==================== EXPORTS ====================
+export const exportVehiclesCSV = () => api.get('/export/vehicles/csv', { responseType: 'blob' });
+export const exportVehiclesExcel = () => api.get('/export/vehicles/excel', { responseType: 'blob' });
+export const exportGlobalReportPDF = () => api.get('/export/report/global/pdf', { responseType: 'blob' });
+export const exportVehicleReportPDF = (vehicleId: number) => api.get(`/export/vehicle/${vehicleId}/pdf`, { responseType: 'blob' });
+
+// ==================== UTILITAIRES ====================
+export const downloadFile = (blob: Blob, filename: string) => {
+  const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
-  link.parentNode?.removeChild(link);
+  link.remove();
+  window.URL.revokeObjectURL(url);
 };
