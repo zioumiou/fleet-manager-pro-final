@@ -1,14 +1,14 @@
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+#from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from .routers import vehicles, maintenances, fuels, expenses, dashboard, export, documents, tires, reminders, reports, budgets, incidents
 from .routers import naftal
 from .routers import drivers
 from .routers import budgets, incidents
 from fastapi.staticfiles import StaticFiles
-from .routers import auth
-from .routers import auth, documents # <-- Ajoutez documents ici
+#from .routers import auth
+#from .routers import auth, documents # <-- Ajoutez documents ici
 from .routers import auth, documents, notifications # <-- Ajoutez notifications
 from .routers import analytics
 
